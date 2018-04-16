@@ -14,6 +14,7 @@ var glob = require('glob');
 var helpers = require('./helpers');
 var logger = require("../../../lib/logger");
 var mime = require('mime');
+var traverse = require('traverse');
 
 function ImportSource(req, done) {
   var contentMap = {
@@ -492,7 +493,6 @@ function ImportSource(req, done) {
         },
         function updateAssetData(cb) {
           var newAssetPath = Constants.Folders.Course + '/' + Constants.Folders.Assets; // always use '/' for paths in content
-          var traverse = require('traverse');
 
           traverse(data).forEach(function (value) {
             if (!_.isString(value)) return;
