@@ -132,6 +132,13 @@ AdaptOutput.prototype.publish = function(courseId, mode, request, response, next
       });
     },
     function(callback) {
+      if(mode !== Constants.Modes.EXPORT) {
+        return callback();
+      }
+      var courseFolder = path.join(BUILD_FOLDER, Constants.Folders.Course, outputJson['config']._defaultLanguage);
+      writeTagMetadata(outputJson, courseFolder, callback);
+    },
+    function(callback) {
       self.writeCourseJSON(outputJson, path.join(BUILD_FOLDER, Constants.Folders.Course), function(err) {
         if (err) {
           return callback(err);
@@ -305,240 +312,40 @@ function generateLatestBuild(courseBuilt) {
 /**
 * Metadata functions
 */
-// creates metadata.json file
-function generateMetadata(generatedMetadata) {
-  async.waterfall([
-    function(callback) {
-      getPackageData(FRAMEWORK_ROOT_DIR, callback);
-    },
-    function(metadata, callback) {
-      getCourseMetdata(courseId, metadata, callback);
-    },
-    function(metadata, callback) {
-      getAssetMetadata(courseId, metadata, callback);
-    },
-    function(metadata, callback) {
-      getPluginMetadata(courseId, metadata, callback);
-    },
-    function(metadata, callback) {
-      getTagsMetadata(metadata, callback);
-    }
-  ], function(error, results) {
+
+/**
+* Generates:
+* - A map for component types
+* - List of plugins to include (i.e. plugins that have been manually updated,
+*   or are completely custom)
+*/
+function writeTagMetadata(outputJson, courseFolder, tagsMetadataWritten) {
+  database.getDatabase(function getTagsJson(error, db) {
     if(error) {
-      return generatedMetadata(error);
+      return tagsMetadataWritten(error);
     }
+    var usedTags = outputJson.course.tags || [];
 
-    metadata = results;
-    fs.writeJson(path.join(EXPORT_DIR, Constants.Filenames.Metadata), metadata, { spaces:0 }, generatedMetadata);
-  });
-};
-
-
-// pulls out relevant attributes from package.json
-function getPackageData(frameworkDir, gotPackageJson) {
-  fs.readJson(path.join(frameworkDir, Constants.Filenames.Package), function onJsonRead(error, packageJson) {
-    gotPackageJson(null, _.pick(packageJson, 'version'));
-  });
-};
-
-// rips all course data from the DB
-function getCourseMetdata(courseId, metadata, gotCourseMetadata) {
-  database.getDatabase(function(error, db) {
-    if (error) {
-      return callback(error);
-    }
-    // coursedata structure
-    var coursedata = {
-      course: {},
-      courseTagMap: []
-    };
-
-    async.each(Object.keys(Constants.CourseCollections), function iterator(collectionType, doneIterator) {
-      var criteria = collectionType === 'course' ? { _id: courseId } : { _courseId: courseId };
-      db.retrieve(collectionType, criteria, {operators: { sort: { _sortOrder: 1}}}, function dbRetrieved(error, results) {
-        if (error) {
-          gotCourseMetadata(doneIterator);
+    fs.readJson(path.join(courseFolder, Constants.Filenames.Assets), function(error, assetsJson) {
+      for(var asset in assetsJson) {
+        if(!assetsJson[asset].tags) {
+          continue;
         }
-        // only store the _doc values
-        var toSave = _.pluck(results,'_doc');
-        // store data, remove blacklisted properties
-        _.each(toSave, function(item, index) { toSave[index] = _.omit(item, blacklistedProps); });
-        coursedata.course[collectionType] = toSave;
-        // move tag so tag list can be generated later
-        _.each(toSave, function(item, index) {
-          if (item.tags) {
-            _.each(item.tags, function(tagId) {
-              coursedata.courseTagMap.push(tagId);
-            })
-          }
-        });
-        doneIterator();
-      });
-    }, function doneEach(error) {
-      metadata = _.extend(metadata, coursedata);
-      gotCourseMetadata(error, metadata);
-    });
-  }, usermanager.getCurrentUser().tenant._id);
-};
-
-function getAssetMetadata(courseId, metadata, gotAssetMetadata) {
-  // assetdata structure
-  var assetdata = {
-    assets: {},
-    courseassets: [],
-    assetTagMap: []
-  };
-  origin.contentmanager.getContentPlugin('courseasset', function(error, plugin) {
-    plugin.retrieve({ _courseId:courseId }, function(error, results) {
-      if(error) {
-        return gotAssetMetadata(error);
+        for(var i in assetsJson[asset].tags) {
+          var tagId = assetsJson[asset].tags[i]._id;
+          if(!usedTags.includes(tagId)) usedTags.push(tagId);
+        }
       }
-
-      async.each(results, function iterator(courseasset, doneIterator) {
-        origin.assetmanager.retrieveAsset({ _id:courseasset._assetId }, function(error, matchedAssets) {
-          if(error) {
-            return doneIterator(error);
-          }
-          if(!matchedAssets) {
-            return doneIterator(new Error('No asset found with id: ' + courseasset._assetId));
-          }
-          if(matchedAssets.length > 1) {
-            logger.log('info',"export.getAssetMetadata: multiple assets found with id", courseasset._assetId, "using first result");
-          }
-          var asset = matchedAssets[0];
-
-          if(!assetdata.assets[asset.filename]) {
-            assetdata.assets[asset.filename] = {
-              "oldId": asset._id,
-              "title": asset.title,
-              "description": asset.description,
-              "type": asset.mimeType,
-              "size": asset.size,
-              "tags": []
-            };
-
-            _.each(asset.tags, function iterator(tag) {
-              if (tag._id) {
-                assetdata.assets[asset.filename].tags.push(tag._id);
-                assetdata.assetTagMap.push(tag._id);
-              }
-            });
-          }
-
-          // store the courseasset, omitting the blacklistedProps + _id
-          var toOmit = blacklistedProps.concat([ "_id" ]);
-          var courseassetData = _.omit(courseasset._doc, toOmit);
-          assetdata.courseassets.push(courseassetData);
-
-          doneIterator();
-        });
-      }, function doneEach(error) {
-        metadata = _.extend(metadata, assetdata);
-        gotAssetMetadata(error, metadata);
-      });
-    });
-  });
-};
-
-/**
-* Generates:
-* - A map for component types
-* - List of plugins to include (i.e. plugins that have been manually updated,
-*   or are completely custom)
-*/
-function getPluginMetadata(courseId, metadata, gotPluginMetadata) {
-  /*
-  * HACK there's got to be a way to get this info dynamically
-  * We need:
-  * - Content plugin name to see if it's already installed (so need plugin type)
-  * - Plugin folder name to find plugin code (so need the plugin folder name -- maybe do this with a glob/search?)
-  * (See Import.importPlugins for context)
-  * For now, add map to plugindata
-  */
-  var plugindata = {
-    pluginTypes: [
-      { type: 'component', folder: 'components' },
-      { type: 'extension', folder: 'extensions' },
-      { type: 'menu',      folder: 'menu'       },
-      { type: 'theme',     folder: 'theme'      }
-    ],
-    pluginIncludes: []
-  };
-
-  var includes;
-  async.waterfall([
-    function getIncludes(cb) {
-      self.generateIncludesForCourse(courseId, cb);
-    },
-    function getDb(pIncludes, cb) {
-      includes = pIncludes;
-      database.getDatabase(cb);
-    },
-    function generateIncludes(db, cb) {
-      async.each(plugindata.pluginTypes, function iterator(pluginType, doneIterator) {
-        db.retrieve(pluginType.type + 'type', { "isLocalPackage": true, "_isDeleted": false }, function gotTypeDoc(error, results) {
-          if(error) {
-            return cb(error);
-          }
-          async.each(results, function iterator(result, doneIterator2) {
-            if(_.indexOf(includes, result.name) !== -1) {
-              var thisPluginType = _.clone(pluginType);
-              var data = _.extend(thisPluginType, { name: result.name });
-              plugindata.pluginIncludes.push(data);
-            }
-            doneIterator2();
-          }, doneIterator);
-        });
-      }, cb);
-    }
-  ], function doneWaterfall(error) {
-    metadata = _.extend(metadata, plugindata);
-    gotPluginMetadata(error, metadata);
-  });
-};
-
-
-/**
-* Generates:
-* - A map for component types
-* - List of plugins to include (i.e. plugins that have been manually updated,
-*   or are completely custom)
-*/
-function getTagsMetadata(metadata, gotTagsMetadata) {
-  var tagdata = {
-    tags: []
-  };
-  var tagMap = [];
-
-  async.waterfall([
-    function getDb(cb) {
-      database.getDatabase(cb);
-    },
-    function getTagsJson(db, cb) {
-      if (!metadata.courseTagMap && !metadata.assetTagMap) {
-        logger.log('error', 'No tags');
-      } else {
-        tagMap = _.union(metadata.courseTagMap, metadata.assetTagMap);
-      }
-      db.retrieve('tag', { "_tenantId": usermanager.getCurrentUser().tenant._id, "_isDeleted": false }, function gotTag(error, results) {
+      db.retrieve('tag', { "_isDeleted": false, _id: { $in: usedTags } }, function gotTag(error, results) {
         if(error) {
           return cb(error);
         }
-        async.each(results, function iterator(result, doneIterator) {
-          if(_.find(tagMap, result._id)) {
-            var data = ({ oldId: result._id, title: result.title });
-            tagdata.tags.push(data);
-          }
-          doneIterator();
-        }, cb);
+        fs.writeJson(path.join(courseFolder, Constants.Filenames.Tags), _.map(results, function(tagData) {
+          var acceptedKeys = Object.keys(_.omit(db.getModel('tag').schema.paths, [ '__v' ]));
+          return _.pick(tagData, acceptedKeys);
+        }), { spaces: 2 }, tagsMetadataWritten);
       });
-    }
-  ], function doneWaterfall(error) {
-    var tagMapTypes = [ 'courseTagMap', 'assetTagMap' ];
-    metadata = _.omit(metadata, tagMapTypes);
-    metadata = _.extend(metadata, tagdata);
-
-    gotTagsMetadata(error, metadata);
+    });
   });
 };
 
