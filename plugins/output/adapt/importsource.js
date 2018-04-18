@@ -597,6 +597,34 @@ function ImportSource(req, done) {
       });
     }, cb(null, contentData));
   }
+
+  function transformContent(done) {
+    /**
+    * TODO:
+    * hero image
+    * filter menu
+    */
+    // start controller
+    app.contentmanager.getContentPlugin('course', function(error, plugin) {
+      if(error) {
+        return done(error);
+      }
+      plugin.retrieve({ _id: courseId }, {}, function(error, results) {
+        if(error) {
+          return done(error);
+        }
+        if(!results.length || !results[0]._start || !results[0]._start._startIds.length) {
+          return done();
+        }
+        var delta = _.extend({}, results[0]._start, { _startIds: [] });
+
+        for(var i = 0, ids = results[0]._start._startIds, count = ids.length; i < count; i++) {
+          delta._startIds.push(_.extend({}, ids[i], { _id: metadata.idMap[ids[i]._id] }));
+        }
+        plugin.update({ _id: courseId }, { _start: delta }, done);
+      });
+    });
+  }
 }
 
 /**
