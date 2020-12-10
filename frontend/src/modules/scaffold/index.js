@@ -13,8 +13,9 @@ define([
   './views/scaffoldItemsModalView',
   './views/scaffoldListView',
   './views/scaffoldTagsView',
-  './views/scaffoldUsersView'
-], function(Origin, Helpers, Schemas, BackboneForms, BackboneFormsLists, Overrides, ScaffoldAssetView, ScaffoldAssetItemView, ScaffoldCodeEditorView, ScaffoldColourPickerView, ScaffoldDisplayTitleView, ScaffoldItemsModalView, ScaffoldListView, ScaffoldTagsView, ScaffoldUsersView) {
+  './views/scaffoldUsersView',
+  './lang/scaffoldLanguage.js'
+], function(Origin, Helpers, Schemas, BackboneForms, BackboneFormsLists, Overrides, ScaffoldAssetView, ScaffoldAssetItemView, ScaffoldCodeEditorView, ScaffoldColourPickerView, ScaffoldDisplayTitleView, ScaffoldItemsModalView, ScaffoldListView, ScaffoldTagsView, ScaffoldUsersView, ScaffoldLanguage) {
 
   var Scaffold = {};
   var alternativeModel;
@@ -147,7 +148,14 @@ define([
 
     var scaffoldSchema = {};
 
+    console.log(schema)
+    console.log(options);
+    console.log(type);
+
+    schema = ScaffoldLanguage.translate(schema);
+
     for (var key in schema) {
+      console.log(key)
       if (!schema.hasOwnProperty(key)) continue;
 
       var field = schema[key];
@@ -169,6 +177,10 @@ define([
   }
 
   function buildFieldsets(schema, options) {
+    console.log(schema);
+    console.log(options);
+
+
     var fieldsets = {
       general: { key: 'general', legend: Origin.l10n.t('app.scaffold.general'), fields: [] },
       properties: { key: 'properties', legend: Origin.l10n.t('app.scaffold.properties'), fields: [] },
@@ -176,10 +188,14 @@ define([
       extensions: { key: 'extensions', legend: Origin.l10n.t('app.scaffold.extensions'), fields: [ '_extensions' ] }
     };
 
+    schema = ScaffoldLanguage.translate(schema);
+    console.log(schema);
+
     for (var key in schema) {
       if (!schema.hasOwnProperty(key) || key === '_extensions') continue;
-
       var value = schema[key];
+
+      console.log(value)
 
       if (value.isSetting) {
         fieldsets.settings.fields.push(key);
@@ -226,7 +242,7 @@ define([
     if (!fieldsets.properties.fields.length) {
       delete fieldsets.properties;
     }
-
+    console.log(_.values(fieldsets))
     return _.values(fieldsets);
   }
 
@@ -234,7 +250,7 @@ define([
     var model = options.model;
     var type = model.get('_type') || model._type || options.schemaType;
     options.isTheme = false;
-
+    console.log(options)
     switch (type) {
       case 'menu':
       case 'page':
@@ -252,6 +268,9 @@ define([
     if (options.isTheme) {
       schema = schema.variables;
     }
+
+
+
     options.model.schema = buildSchema(schema, options, type);
     options.fieldsets = buildFieldsets(schema, options);
     alternativeModel = options.alternativeModelToSave;
