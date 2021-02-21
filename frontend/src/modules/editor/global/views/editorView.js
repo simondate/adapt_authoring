@@ -57,7 +57,7 @@ define(function(require) {
 
     postRender: function() {
       var components = $('div.component:not(".no-prism"):not(".prism-preformatted")');
-      $(components).each((idx, component) => {
+      $(components).each(function (idx, component) {
         Prism.highlightAllUnder(component);
       });
     },
