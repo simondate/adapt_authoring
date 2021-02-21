@@ -65,14 +65,121 @@ define([
   // render ckeditor in textarea
   Backbone.Form.editors.TextArea.prototype.render = function() {
     textAreaRender.call(this);
+    if (!CKEDITOR.stylesSet.registered.custom) {
+      CKEDITOR.stylesSet.add( 'custom', [
+        // Block-level default styles
+        { name: 'Italic Title', element: 'h2', styles: { 'font-style': 'italic' } },
+        { name: 'Subtitle', element: 'h3', styles: { 'color': '#aaa', 'font-style': 'italic' } },
+        { name: 'Special Container',
+          element: 'div',
+          styles: {
+            padding: '5px 10px',
+            background: '#eee',
+            border: '1px solid #ccc'
+          }
+        },
+        // Block-level custom styles
+        { name: 'Notice Info', element: 'div', attributes: { 'class': 'notice info icon icon-info-with-circle'},
+          styles: {
+            'border': 'solid 1px #9eb6d4',
+            'background-color': '#e0efff',
+            'padding': '1rem'
+          }
+        },
+        { name: 'Notice Note', element: 'div', attributes: { 'class': 'notice note icon icon-warning'},
+          styles: {
+            'border': 'solid 1px #f7df92',
+            'background-color': '#ffffdd',
+            'padding': '1rem'
+          }
+        },
+        { name: 'Notice Tip', element: 'div', attributes: { 'class': 'notice tip icon icon-tick'},
+          styles: {
+            'border': 'solid 1px #9ec49f',
+            'background-color': '#ddfade',
+            'padding': '1rem'
+          }
+        },
+        { name: 'Notice Warn', element: 'div', attributes: { 'class': 'notice warn icon icon-cross'},
+          styles: {
+            'border': 'solid 1px #cc0000',
+            'background-color': '#ffcccc',
+            'padding': '1rem'
+          }
+        },
+
+        // Inline default styles
+        { name: 'Marker', element: 'span', attributes: { 'class': 'marker' } },
+        { name: 'Big', element: 'big' },
+        { name: 'Small', element: 'small' },
+        { name: 'Typewriter', element: 'tt' },
+        { name: 'Computer Code', element: 'code' },
+        { name: 'Keyboard Phrase', element: 'kbd' },
+        { name: 'Sample Text', element: 'samp' },
+        { name: 'Variable', element: 'var' },
+        { name: 'Deleted Text', element: 'del' },
+        { name: 'Inserted Text', element: 'ins' },
+        { name: 'Cited Work', element: 'cite' },
+        { name: 'Inline Quotation', element: 'q' },
+        { name: 'Language: RTL', element: 'span', attributes: { 'dir': 'rtl' } },
+        { name: 'Language: LTR', element: 'span', attributes: { 'dir': 'ltr' } },
+
+        /* Object styles */
+        { name: 'Styled Image (left)',
+          element: 'img',
+          attributes: { 'class': 'left' }
+        },
+        { name: 'Styled Image (right)',
+          element: 'img',
+          attributes: { 'class': 'right' }
+        },
+        { name: 'Compact Table',
+          element: 'table',
+          attributes: {
+            cellpadding: '5',
+            cellspacing: '0',
+            border: '1',
+            bordercolor: '#ccc'
+          },
+          styles: {
+            'border-collapse': 'collapse'
+          }
+        },
+        { name: 'Borderless Table', element: 'table', styles: { 'border-style': 'hidden', 'background-color': '#E6E6FA' } },
+        { name: 'Square Bulleted List', element: 'ul', styles: { 'list-style-type': 'square' } },
+
+        /* Widget styles */
+        { name: 'Clean Image', type: 'widget', widget: 'image', attributes: { 'class': 'image-clean' } },
+        { name: 'Grayscale Image', type: 'widget', widget: 'image', attributes: { 'class': 'image-grayscale' } },
+        { name: 'Featured Snippet', type: 'widget', widget: 'codeSnippet', attributes: { 'class': 'code-featured' } },
+        { name: 'Featured Formula', type: 'widget', widget: 'mathjax', attributes: { 'class': 'math-featured' } },
+
+        { name: '240p', type: 'widget', widget: 'embedSemantic', attributes: { 'class': 'embed-240p' }, group: 'size' },
+        { name: '360p', type: 'widget', widget: 'embedSemantic', attributes: { 'class': 'embed-360p' }, group: 'size' },
+        { name: '480p', type: 'widget', widget: 'embedSemantic', attributes: { 'class': 'embed-480p' }, group: 'size' },
+        { name: '720p', type: 'widget', widget: 'embedSemantic', attributes: { 'class': 'embed-720p' }, group: 'size' },
+        { name: '1080p', type: 'widget', widget: 'embedSemantic', attributes: { 'class': 'embed-1080p' }, group: 'size' },
+
+        // Adding space after the style name is an intended workaround. For now, there
+        // is no option to create two styles with the same name for different widget types. See https://dev.ckeditor.com/ticket/16664.
+        { name: '240p ', type: 'widget', widget: 'embed', attributes: { 'class': 'embed-240p' }, group: 'size' },
+        { name: '360p ', type: 'widget', widget: 'embed', attributes: { 'class': 'embed-360p' }, group: 'size' },
+        { name: '480p ', type: 'widget', widget: 'embed', attributes: { 'class': 'embed-480p' }, group: 'size' },
+        { name: '720p ', type: 'widget', widget: 'embed', attributes: { 'class': 'embed-720p' }, group: 'size' },
+        { name: '1080p ', type: 'widget', widget: 'embed', attributes: { 'class': 'embed-1080p' }, group: 'size' }
+      ]);
+    };
+    CKEDITOR.config.stylesSet = 'custom';
 
     _.defer(function() {
       this.editor = CKEDITOR.replace(this.$el[0], {
+        allowedContent: true,
         dataIndentationChars: '',
         disableNativeSpellChecker: false,
         enterMode: CKEDITOR[Origin.constants.ckEditorEnterMode],
         entities: false,
         extraAllowedContent: Origin.constants.ckEditorExtraAllowedContent,
+        extraPlugins: 'image2',
         on: {
           change: function() {
             this.trigger('change', this);
@@ -95,19 +202,20 @@ define([
           }
         },
         toolbar: [
-          { name: 'document', groups: [ 'mode', 'document', 'doctools' ], items: [ 'Source', '-', 'ShowBlocks' ] },
-          { name: 'clipboard', groups: [ 'clipboard', 'undo' ], items: [ 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo' ] },
-          { name: 'editing', groups: [ 'find', 'selection', 'spellchecker' ], items: [ 'Find', 'Replace', '-', 'SelectAll' ] },
-          { name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ], items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv' ] },
-          { name: 'direction', items: [ 'BidiLtr', 'BidiRtl' ] },
+          { name: 'document', items: [ 'Source', 'CodeSnippet' ] },
+          { name: 'clipboard', items: [ 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', 'Undo', 'Redo' ] },
+          { name: 'editing', items: [ 'Find', 'Replace', 'SelectAll' ] },
+          { name: 'forms', items: [ '-' ] },
           '/',
-          { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ], items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat'] },
-          { name: 'styles', items: [ 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock' ] },
+          { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'CopyFormatting', 'RemoveFormat' ] },
+          { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl', 'Language' ] },
           { name: 'links', items: [ 'Link', 'Unlink' ] },
+          { name: 'insert', items: [ 'Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Iframe' ] },
+          '/',
+          { name: 'styles', items: [ 'Styles', 'Format', 'Font', 'FontSize' ] },
           { name: 'colors', items: [ 'TextColor', 'BGColor' ] },
-          { name: 'insert', items: [ 'SpecialChar', 'Table' ] },
-          { name: 'tools', items: [] },
-          { name: 'others', items: [ '-' ] }
+          { name: 'tools', items: [ 'Maximize', 'ShowBlocks' ] },
+          { name: 'about', items: [ '-' ] }
         ]
       });
     }.bind(this));
