@@ -179,7 +179,7 @@ define([
         enterMode: CKEDITOR[Origin.constants.ckEditorEnterMode],
         entities: false,
         extraAllowedContent: Origin.constants.ckEditorExtraAllowedContent,
-        extraPlugins: 'image2',
+        extraPlugins: 'image2,codesnippet',
         on: {
           change: function() {
             this.trigger('change', this);
