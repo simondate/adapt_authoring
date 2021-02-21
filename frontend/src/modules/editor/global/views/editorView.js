@@ -56,7 +56,10 @@ define(function(require) {
     },
 
     postRender: function() {
-
+      var components = $('div.component:not(".no-prism"):not(".prism-preformatted")');
+      $(components).each((idx, component) => {
+        Prism.highlightAllUnder(component);
+      });
     },
 
     setupEditor: function() {
@@ -64,7 +67,7 @@ define(function(require) {
     },
 
     previewProject: function(previewWindow, forceRebuild) {
-      if(Origin.editor.isPreviewPending) {
+      if (Origin.editor.isPreviewPending) {
         return;
       }
       Origin.editor.isPreviewPending = true;
@@ -72,14 +75,16 @@ define(function(require) {
       $('.editor-common-sidebar-preview-inner').addClass('display-none');
       $('.editor-common-sidebar-previewing').removeClass('display-none');
 
-      var url = 'api/output/'+Origin.constants.outputPlugin+'/preview/'+this.currentCourseId+'?force='+(forceRebuild === true);
+      var url = 'api/output/' + Origin.constants.outputPlugin + '/preview/' + this.currentCourseId + '?force=' + (forceRebuild === true);
       $.get(url, function(data, textStatus, jqXHR) {
         if (!data.success) {
           this.resetPreviewProgress();
           Origin.Notify.alert({
             type: 'error',
             text: Origin.l10n.t('app.errorgeneratingpreview') +
-              Origin.l10n.t('app.debuginfo', { message: jqXHR.responseJSON.message })
+              Origin.l10n.t('app.debuginfo', {
+                message: jqXHR.responseJSON.message
+              })
           });
           previewWindow.close();
           return;
@@ -94,7 +99,10 @@ define(function(require) {
         this.resetPreviewProgress();
       }.bind(this)).fail(function(jqXHR, textStatus, errorThrown) {
         this.resetPreviewProgress();
-        Origin.Notify.alert({ type: 'error', text: Origin.l10n.t('app.errorgeneric') });
+        Origin.Notify.alert({
+          type: 'error',
+          text: Origin.l10n.t('app.errorgeneric')
+        });
         previewWindow.close();
       }.bind(this));
     },
@@ -102,7 +110,7 @@ define(function(require) {
     exportProject: function(error) {
       // TODO - very similar to export in project/views/projectView.js, remove duplication
       // aleady processing, don't try again
-      if(error || this.exporting) return;
+      if (error || this.exporting) return;
 
       var courseId = Origin.editor.data.course.get('_id');
       var tenantId = Origin.sessionModel.get('tenantId');
@@ -133,14 +141,16 @@ define(function(require) {
             type: 'error',
             title: Origin.l10n.t('app.exporterrortitle'),
             text: Origin.l10n.t('app.errorgeneric') +
-              Origin.l10n.t('app.debuginfo', { message: jqXHR.responseJSON.message })
+              Origin.l10n.t('app.debuginfo', {
+                message: jqXHR.responseJSON.message
+              })
           });
         }
       });
     },
 
     showExportAnimation: function(show, $btn) {
-      if(show !== false) {
+      if (show !== false) {
         $('.editor-common-sidebar-export-inner', $btn).addClass('display-none');
         $('.editor-common-sidebar-exporting', $btn).removeClass('display-none');
       } else {
@@ -150,7 +160,7 @@ define(function(require) {
     },
 
     downloadProject: function() {
-      if(Origin.editor.isDownloadPending) {
+      if (Origin.editor.isDownloadPending) {
         return;
       }
       $('.editor-common-sidebar-download-inner').addClass('display-none');
@@ -162,7 +172,9 @@ define(function(require) {
           Origin.Notify.alert({
             type: 'error',
             text: Origin.l10n.t('app.errorgeneric') +
-              Origin.l10n.t('app.debuginfo', { message: jqXHR.responseJSON.message })
+              Origin.l10n.t('app.debuginfo', {
+                message: jqXHR.responseJSON.message
+              })
           });
           this.resetDownloadProgress();
           return;
@@ -181,7 +193,10 @@ define(function(require) {
 
       }.bind(this)).fail(function(jqXHR, textStatus, errorThrown) {
         this.resetDownloadProgress();
-        Origin.Notify.alert({ type: 'error', text: Origin.l10n.t('app.errorgeneric') });
+        Origin.Notify.alert({
+          type: 'error',
+          text: Origin.l10n.t('app.errorgeneric')
+        });
       }.bind(this));
     },
 
@@ -199,7 +214,10 @@ define(function(require) {
         }).fail(function(jqXHR, textStatus, errorThrown) {
           clearInterval(pollId);
           self.resetPreviewProgress();
-          Origin.Notify.alert({ type: 'error', text: errorThrown });
+          Origin.Notify.alert({
+            type: 'error',
+            text: errorThrown
+          });
           previewWindow.close();
         });
       }
@@ -219,7 +237,10 @@ define(function(require) {
         }).fail(function(jqXHR, textStatus, errorThrown) {
           clearInterval(pollId);
           this.resetDownloadProgress();
-          Origin.Notify.alert({ type: 'error', text: errorThrown });
+          Origin.Notify.alert({
+            type: 'error',
+            text: errorThrown
+          });
         });
       }, this), 3000);
     },
@@ -253,7 +274,7 @@ define(function(require) {
       $.post('api/content/clipboard/copy', postData, _.bind(function(jqXHR) {
         Origin.editor.clipboardId = jqXHR.clipboardId;
         this.showPasteZones(model.get('_type'));
-      }, this)).fail(_.bind(function (jqXHR, textStatus, errorThrown) {
+      }, this)).fail(_.bind(function(jqXHR, textStatus, errorThrown) {
         Origin.Notify.alert({
           type: 'error',
           text: Origin.l10n.t('app.errorcopy') + (jqXHR.message ? '\n\n' + jqXHR.message : '')
@@ -268,12 +289,16 @@ define(function(require) {
       if (helpers.copyStringToClipboard(id)) {
         Origin.Notify.alert({
           type: 'info',
-          text: Origin.l10n.t('app.copyidtoclipboardsuccess', { id: id })
+          text: Origin.l10n.t('app.copyidtoclipboardsuccess', {
+            id: id
+          })
         });
       } else {
         Origin.Notify.alert({
           type: 'warning',
-          text: Origin.l10n.t('app.app.copyidtoclipboarderror', { id: id })
+          text: Origin.l10n.t('app.app.copyidtoclipboarderror', {
+            id: id
+          })
         });
       }
     },
@@ -301,7 +326,7 @@ define(function(require) {
       });
     },
 
-    createModel: function (type) {
+    createModel: function(type) {
       var model;
       switch (type) {
         case 'contentObjects':
@@ -323,9 +348,9 @@ define(function(require) {
     renderCurrentEditorView: function() {
       Origin.trigger('editorView:removeSubViews');
 
-      if(this.currentView === 'menu') {
+      if (this.currentView === 'menu') {
         this.renderEditorMenu();
-      } else if(this.currentView === 'page') {
+      } else if (this.currentView === 'page') {
         this.renderEditorPage();
       }
 
@@ -333,7 +358,9 @@ define(function(require) {
     },
 
     renderEditorMenu: function() {
-      var view = new EditorMenuView({ model: Origin.editor.data.course });
+      var view = new EditorMenuView({
+        model: Origin.editor.data.course
+      });
       this.$('.editor-inner').html(view.$el);
     },
 
@@ -342,7 +369,9 @@ define(function(require) {
         _id: this.currentPageId
       })).fetch({
         success: function(model) {
-          var view = new EditorPageView({ model: model });
+          var view = new EditorPageView({
+            model: model
+          });
           this.$('.editor-inner').html(view.$el);
         },
         error: function() {
@@ -355,8 +384,8 @@ define(function(require) {
     },
 
     /**
-    * Event handling
-    */
+     * Event handling
+     */
 
     onEditableHoverOver: function(e) {
       e && e.stopPropagation();
