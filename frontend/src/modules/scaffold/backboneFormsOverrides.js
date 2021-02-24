@@ -179,7 +179,7 @@ define([
         enterMode: CKEDITOR[Origin.constants.ckEditorEnterMode],
         entities: false,
         extraAllowedContent: Origin.constants.ckEditorExtraAllowedContent,
-        extraPlugins: 'image2',
+        extraPlugins: 'image2,codesnippet',
         on: {
           change: function() {
             this.trigger('change', this);
@@ -206,8 +206,8 @@ define([
           { name: 'clipboard', items: [ 'Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', 'Undo', 'Redo' ] },
           { name: 'editing', items: [ 'Find', 'Replace', 'SelectAll' ] },
           { name: 'forms', items: [ '-' ] },
-          '/',
           { name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'CopyFormatting', 'RemoveFormat' ] },
+          '/',
           { name: 'paragraph', items: [ 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl', 'Language' ] },
           { name: 'links', items: [ 'Link', 'Unlink' ] },
           { name: 'insert', items: [ 'Image', 'Table', 'HorizontalRule', 'SpecialChar', 'Iframe' ] },
