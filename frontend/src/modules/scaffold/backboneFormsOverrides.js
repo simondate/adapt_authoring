@@ -109,6 +109,21 @@ define([
           allow: convertStringsToRegExDeep((Origin.constants.ckEditorHtmlSupport && Origin.constants.ckEditorHtmlSupport.allow) || []),
           disallow: convertStringsToRegExDeep((Origin.constants.ckEditorHtmlSupport && Origin.constants.ckEditorHtmlSupport.disallow) || [])
         },
+        link: {
+          // Automatically add target="_blank" and rel="noopener noreferrer" to all external links.
+          addTargetToExternalLinks: true,
+
+          // Let the users control the "download" attribute of each link.
+          decorators: [
+            {
+              mode: 'manual',
+              label: 'Downloadable',
+              attributes: {
+                download: 'download'
+              }
+            }
+          ]
+		    },
         on: {
           change: function() {
             this.trigger('change', this);
